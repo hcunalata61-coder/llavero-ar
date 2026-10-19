@@ -1,0 +1,8 @@
+{
+  "appId": "com.taynastudio.llaveroar",
+  "appName": "Llavero AR",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}
