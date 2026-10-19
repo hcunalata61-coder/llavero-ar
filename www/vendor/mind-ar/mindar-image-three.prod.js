@@ -13613,7 +13613,7 @@ class Zb {
       }
       const a = {
         audio: !1,
-        video: {}
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } }
       };
       this.shouldFaceUser ? this.userDeviceId ? a.video.deviceId = { exact: this.userDeviceId } : a.video.facingMode = "user" : this.environmentDeviceId ? a.video.deviceId = { exact: this.environmentDeviceId } : a.video.facingMode = "environment", navigator.mediaDevices.getUserMedia(a).then((r) => {
         this.video.addEventListener("loadedmetadata", () => {

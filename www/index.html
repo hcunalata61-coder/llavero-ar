@@ -6,8 +6,7 @@
 <meta name="theme-color" content="#0f1720">
 <title>Llavero AR</title>
 <style>
-  /* App de cámara: un solo tema oscuro, controles grandes al alcance del pulgar */
-  @font-face { font-family: "Fredoka"; font-weight: 500; font-display: swap; src: url("fuentes/fredoka-latin-500-normal.woff2") format("woff2"); }
+  /* Cámara a pantalla completa; ajustes en un panel lateral */
   @font-face { font-family: "Fredoka"; font-weight: 600; font-display: swap; src: url("fuentes/fredoka-latin-600-normal.woff2") format("woff2"); }
   @font-face { font-family: "Nunito Sans"; font-weight: 400; font-display: swap; src: url("fuentes/nunito-sans-latin-400-normal.woff2") format("woff2"); }
   @font-face { font-family: "Nunito Sans"; font-weight: 600; font-display: swap; src: url("fuentes/nunito-sans-latin-600-normal.woff2") format("woff2"); }
@@ -17,28 +16,27 @@
     --tinta: #0f1720;
     --tinta-2: #17222d;
     --tinta-3: #223140;
-    --tinta-90: rgba(15, 23, 32, 0.9);
+    --tinta-90: rgba(15, 23, 32, 0.92);
     --tinta-60: rgba(15, 23, 32, 0.6);
     --papel: #f8f3e8;
     --papel-70: rgba(248, 243, 232, 0.7);
     --papel-40: rgba(248, 243, 232, 0.4);
-    --sol: #c766ff;
+    --lila: #c766ff;
     --marca: #a100ff;
-    --sobre-marca: #ffffff;
-    --teja: #ef6a52;
-    --paramo: #6fb08f;
+    --rosa: #ff5c8a;
     --fuente-titulo: "Fredoka", "Nunito Sans", system-ui, sans-serif;
     --fuente-texto: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --radio: 18px;
     --sup: env(safe-area-inset-top, 0px);
     --inf: env(safe-area-inset-bottom, 0px);
+    --izq: env(safe-area-inset-left, 0px);
+    --der: env(safe-area-inset-right, 0px);
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body {
-    margin: 0; height: 100%;
-    background: var(--tinta); color: var(--papel);
+    margin: 0; height: 100%; overflow: hidden;
+    background: #000; color: var(--papel);
     font-family: var(--fuente-texto); font-size: 16px;
     -webkit-tap-highlight-color: transparent;
     -webkit-user-select: none; user-select: none;
@@ -46,141 +44,48 @@
   }
   button, input { font: inherit; color: inherit; }
 
-  .pantalla {
-    position: fixed; inset: 0; overflow-y: auto;
-    padding: calc(24px + var(--sup)) max(20px, env(safe-area-inset-right, 0px)) calc(28px + var(--inf)) max(20px, env(safe-area-inset-left, 0px));
-  }
-  .columna { max-width: 520px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; gap: 22px; }
-
-  .etiqueta { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sol); }
-  h1 { margin: 0; font-family: var(--fuente-titulo); font-weight: 600; font-size: clamp(34px, 10vw, 48px); line-height: 1.02; text-wrap: balance; }
-  h2 { margin: 0; font-family: var(--fuente-titulo); font-weight: 600; font-size: 22px; line-height: 1.15; }
-  p { margin: 0; line-height: 1.5; color: var(--papel-70); }
-
-  .boton {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; min-height: 58px; padding: 0 22px;
-    border: 0; border-radius: var(--radio);
-    background: var(--marca); color: var(--sobre-marca);
-    font-family: var(--fuente-titulo); font-size: 19px; font-weight: 600;
-    cursor: pointer; touch-action: manipulation;
-    transition: transform 0.15s ease, opacity 0.15s ease;
-  }
-  .boton:active { transform: scale(0.97); }
-  .boton.secundario { background: var(--tinta-3); color: var(--papel); }
-  .boton.chico { min-height: 48px; font-size: 16px; }
-  .boton[disabled] { opacity: 0.45; pointer-events: none; }
-  .boton:focus-visible, .redondo:focus-visible, .opcion:focus-visible { outline: 3px solid var(--papel); outline-offset: 3px; }
-  .fila { display: flex; gap: 10px; }
-  .fila > * { flex: 1; min-width: 0; }
-
-  /* ---------- Inicio ---------- */
-  .logo {
-    width: min(40vw, 168px); max-width: 100%; aspect-ratio: 1;
-    align-self: center; margin-top: auto;
-    filter: drop-shadow(0 18px 50px rgba(161, 0, 255, 0.55));
-  }
-  #inicio {
-    background:
-      radial-gradient(120% 60% at 90% 0%, rgba(161, 0, 255, 0.32), transparent 60%),
-      radial-gradient(90% 50% at 0% 100%, rgba(255, 92, 138, 0.16), transparent 70%),
-      var(--tinta);
+  #escena { position: fixed; inset: 0; overflow: hidden; background: #000; }
+  #marco-deteccion {
+    position: fixed; z-index: 5; pointer-events: none;
+    border: 2px dashed var(--lila); border-radius: 12px;
   }
 
-  .selector { display: grid; gap: 10px; }
-  .opcion {
-    display: flex; align-items: center; gap: 14px;
-    width: 100%; padding: 12px; text-align: left;
-    border: 2px solid transparent; border-radius: var(--radio);
-    background: var(--tinta-2); cursor: pointer;
+  /* Guía de escaneo */
+  #guia { position: fixed; inset: 0; z-index: 6; pointer-events: none; display: grid; place-items: center; transition: opacity 0.35s ease; }
+  #guia.oculta { opacity: 0; }
+  .visor {
+    width: min(64vw, 320px); aspect-ratio: 3 / 4; max-width: 100%;
+    border-radius: 36px; border: 3px dashed rgba(248, 243, 232, 0.85);
+    box-shadow: 0 0 0 100vmax rgba(15, 23, 32, 0.32);
+    animation: respirar 2.2s ease-in-out infinite;
   }
-  .opcion[aria-pressed="true"] { border-color: var(--sol); background: var(--tinta-3); }
-  .opcion img, .opcion .vacio {
-    width: 58px; height: 58px; flex: none; border-radius: 50%; object-fit: cover;
-    background: var(--tinta-3);
-  }
-  .opcion .vacio { display: grid; place-items: center; font-size: 26px; color: var(--papel-40); border: 2px dashed var(--papel-40); }
-  .opcion div { min-width: 0; display: grid; gap: 2px; }
-  .opcion strong { font-family: var(--fuente-titulo); font-weight: 600; font-size: 18px; }
-  .opcion small { color: var(--papel-70); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .opcion .marca {
-    margin-left: auto; width: 24px; height: 24px; flex: none; border-radius: 50%;
-    border: 2px solid var(--papel-40);
-  }
-  .opcion[aria-pressed="true"] .marca { border-color: var(--sol); background: radial-gradient(circle, var(--sol) 45%, transparent 50%); }
+  @keyframes respirar { 50% { transform: scale(1.04); border-color: var(--lila); } }
 
-  /* ---------- Configurar ---------- */
-  .cabecera { display: flex; align-items: center; gap: 12px; }
+  /* Botones flotantes */
   .redondo {
-    width: 48px; height: 48px; flex: none;
+    width: 52px; height: 52px; flex: none;
     border: 0; border-radius: 50%;
-    background: var(--tinta-3); color: var(--papel);
+    background: var(--tinta-60); color: var(--papel);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     display: grid; place-items: center; cursor: pointer; touch-action: manipulation;
   }
   .redondo svg { width: 24px; height: 24px; }
-  .paso { display: grid; gap: 12px; padding: 18px; border-radius: 22px; background: var(--tinta-2); }
-  .paso-titulo { display: flex; align-items: baseline; gap: 10px; }
-  .paso-titulo b { font-family: var(--fuente-titulo); color: var(--sol); font-size: 15px; letter-spacing: 0.08em; }
-  .consejos { margin: 0; padding-left: 18px; color: var(--papel-70); font-size: 14px; line-height: 1.5; }
+  .redondo:focus-visible, .boton:focus-visible { outline: 3px solid var(--lila); outline-offset: 2px; }
+  .redondo.activo { background: var(--marca); }
 
-  .recorte { display: grid; gap: 10px; justify-items: center; }
-  #lienzo-recorte {
-    width: min(100%, 300px); aspect-ratio: 1; max-width: 100%;
-    border-radius: 16px; background: var(--tinta-3);
-    touch-action: none; cursor: grab;
-  }
-  .zoom { display: flex; align-items: center; gap: 10px; width: min(100%, 300px); color: var(--papel-70); font-size: 14px; }
-  .zoom input { flex: 1; accent-color: var(--sol); }
-  .ayuda { font-size: 13px; color: var(--papel-70); text-align: center; }
-  .vistas { display: flex; flex-wrap: wrap; gap: 10px; }
-  .vistas:empty { display: none; }
-  .vista { position: relative; width: 76px; height: 76px; border-radius: 14px; overflow: hidden; background: var(--tinta-3); }
-  .vista img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .vista button {
-    position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; padding: 0;
-    border: 0; border-radius: 50%; background: var(--tinta-90); color: var(--papel);
-    font-size: 16px; line-height: 1; cursor: pointer;
-  }
-
-  .musica-elegida {
+  #cabecera {
+    position: fixed; z-index: 15; left: 0; right: 0; top: 0;
     display: flex; align-items: center; gap: 10px;
-    padding: 12px 14px; border-radius: 14px; background: var(--tinta-3);
-    font-size: 15px;
+    padding: calc(12px + var(--sup)) max(14px, var(--der)) 12px max(14px, var(--izq));
+    background: linear-gradient(to bottom, var(--tinta-60), transparent);
   }
-  .musica-elegida span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #enlace-musica {
-    width: 100%; min-height: 48px; padding: 0 14px;
-    border: 2px solid var(--tinta-3); border-radius: 14px; background: var(--tinta);
-    font-size: 16px; -webkit-user-select: text; user-select: text;
-  }
-  #enlace-musica:focus { outline: none; border-color: var(--sol); }
+  #cabecera img { width: 34px; height: 34px; border-radius: 9px; }
+  #cabecera strong { font-family: var(--fuente-titulo); font-weight: 600; font-size: 19px; flex: 1; }
 
-  .progreso { height: 10px; border-radius: 999px; background: var(--tinta-3); overflow: hidden; }
-  .progreso i { display: block; height: 100%; width: 0%; background: var(--sol); transition: width 0.2s ease; }
-  #mensaje-config { font-weight: 600; font-variant-numeric: tabular-nums; min-height: 1.5em; }
-  #mensaje-config.error { color: var(--teja); }
-  #mensaje-config.bien { color: var(--paramo); }
-
-  /* ---------- Escáner ---------- */
-  #escena { position: fixed; inset: 0; background: #000; }
-  #guia { position: fixed; inset: 0; z-index: 10; pointer-events: none; display: grid; place-items: center; transition: opacity 0.35s ease; }
-  #guia.oculta { opacity: 0; }
-  .visor {
-    width: min(66vw, 340px); aspect-ratio: 1; max-width: 100%;
-    border-radius: 50%; border: 3px dashed rgba(248, 243, 232, 0.85);
-    box-shadow: 0 0 0 100vmax rgba(15, 23, 32, 0.38);
-    animation: respirar 2.2s ease-in-out infinite;
-  }
-  @keyframes respirar { 50% { transform: scale(1.05); border-color: var(--sol); } }
-  #volver-ar {
-    position: fixed; z-index: 16;
-    top: calc(14px + var(--sup)); left: max(14px, env(safe-area-inset-left, 0px));
-    background: var(--tinta-60); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  }
   #barra {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 15;
     display: flex; align-items: center; gap: 12px;
-    padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(16px + var(--inf)) max(16px, env(safe-area-inset-left, 0px));
+    padding: 16px max(16px, var(--der)) calc(16px + var(--inf)) max(16px, var(--izq));
     background: linear-gradient(to top, var(--tinta-90), transparent);
   }
   #estado {
@@ -190,14 +95,89 @@
     font-weight: 600; font-size: 15px;
   }
   #estado .punto { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--papel-70); animation: parpadeo 1.2s ease-in-out infinite; }
-  #estado.detectado .punto { background: var(--sol); animation: none; box-shadow: 0 0 0 4px rgba(199, 102, 255, 0.35); }
+  #estado.detectado .punto { background: var(--lila); animation: none; box-shadow: 0 0 0 4px rgba(199, 102, 255, 0.35); }
   @keyframes parpadeo { 50% { opacity: 0.3; } }
   #estado-texto { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #silenciar { width: 52px; height: 52px; background: var(--tinta-60); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 
+  /* Panel de ajustes */
+  #velo { position: fixed; inset: 0; z-index: 29; background: rgba(0, 0, 0, 0.45); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  #velo.visible { opacity: 1; pointer-events: auto; }
+  #ajustes {
+    position: fixed; z-index: 30; top: 0; right: 0; bottom: 0;
+    width: min(86vw, 360px);
+    padding: calc(18px + var(--sup)) max(18px, var(--der)) calc(18px + var(--inf)) 18px;
+    background: var(--tinta-90);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-left: 1px solid var(--tinta-3);
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 18px;
+    transform: translateX(105%); transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  #ajustes.abierto { transform: none; }
+  .ajustes-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ajustes-cabecera h2 { margin: 0; font-family: var(--fuente-titulo); font-weight: 600; font-size: 24px; }
+  .ajustes-cabecera .redondo { width: 44px; height: 44px; background: var(--tinta-3); }
+
+  .grupo { display: grid; gap: 4px; }
+  .grupo-titulo { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lila); margin-bottom: 4px; }
+  .fila-ajuste {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    min-height: 52px; padding: 8px 0; border-bottom: 1px solid var(--tinta-3);
+  }
+  .fila-ajuste:last-child { border-bottom: 0; }
+  .fila-ajuste > span { display: grid; gap: 2px; min-width: 0; }
+  .fila-ajuste small { color: var(--papel-70); font-size: 13px; line-height: 1.35; }
+  .fila-ajuste.columna { flex-direction: column; align-items: stretch; gap: 8px; }
+  .fila-ajuste.columna > span { display: flex; justify-content: space-between; }
+  .fila-ajuste output { color: var(--papel-70); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--lila); }
+
+  .interruptor { position: relative; width: 50px; height: 30px; flex: none; }
+  .interruptor input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+  .interruptor i { position: absolute; inset: 0; border-radius: 999px; background: var(--tinta-3); transition: background 0.2s ease; }
+  .interruptor i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--papel); transition: transform 0.2s ease; }
+  .interruptor input:checked + i { background: var(--marca); }
+  .interruptor input:checked + i::after { transform: translateX(20px); }
+  .interruptor input:focus-visible + i { outline: 3px solid var(--lila); outline-offset: 2px; }
+  .interruptor input:disabled + i { opacity: 0.4; }
+
+  .boton {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 50px; padding: 0 18px;
+    border: 0; border-radius: 14px;
+    background: var(--marca); color: #fff;
+    font-family: var(--fuente-titulo); font-weight: 600; font-size: 17px;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .boton.secundario { background: var(--tinta-3); color: var(--papel); }
+  .boton:active { transform: scale(0.98); }
+  .nota { margin: 0; font-size: 13px; line-height: 1.45; color: var(--papel-70); }
+
+  /* Calibración */
+  #calibrar-capa { position: fixed; inset: 0; z-index: 20; pointer-events: none; display: grid; place-items: center; }
+  #calibrar-capa .mira {
+    width: 34vmin; height: 34vmin; border-radius: 50%;
+    border: 3px solid var(--lila); box-shadow: 0 0 0 100vmax rgba(15, 23, 32, 0.45);
+  }
+  #calibrar-barra {
+    position: fixed; z-index: 21; left: 0; right: 0; bottom: 0;
+    display: grid; gap: 10px;
+    padding: 18px max(16px, var(--der)) calc(18px + var(--inf)) max(16px, var(--izq));
+    background: var(--tinta-90);
+  }
+  #calibrar-barra p { margin: 0; text-align: center; line-height: 1.4; }
+  #calibrar-barra .fila { display: flex; gap: 10px; }
+  #calibrar-barra .fila > * { flex: 1; }
+
+  #toque-sonido {
+    position: fixed; z-index: 16; left: 50%; transform: translateX(-50%);
+    bottom: calc(96px + var(--inf));
+    padding: 10px 16px; border-radius: 999px; border: 0;
+    background: var(--papel); color: var(--tinta); font-weight: 700;
+  }
   #aviso {
     position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
-    bottom: calc(24px + var(--inf)); width: min(92vw, 460px);
+    top: calc(80px + var(--sup)); width: min(92vw, 460px);
     padding: 14px 18px; border-radius: 16px;
     background: var(--papel); color: var(--tinta); font-weight: 600; line-height: 1.4;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
@@ -205,114 +185,118 @@
 
   @media (prefers-reduced-motion: reduce) {
     .visor, #estado .punto { animation: none; }
+    #ajustes, #velo { transition: none; }
   }
 </style>
 </head>
 <body>
 
-<!-- ================= INICIO ================= -->
-<section id="inicio" class="pantalla">
-  <div class="columna">
-    <img class="logo" src="icono.svg" alt="">
-    <div style="display:grid;gap:10px">
-      <span class="etiqueta">Realidad aumentada</span>
-      <h1 id="titulo">Llavero AR</h1>
-      <p>Elige qué llavero quieres escanear y apunta la cámara a su cara.</p>
-    </div>
-    <div class="selector" role="group" aria-label="Llavero a escanear">
-      <button class="opcion" id="op-incluido" type="button" aria-pressed="true">
-        <img id="incluido-foto" alt="">
-        <div><strong id="incluido-nombre">Cocodrilo</strong><small id="incluido-detalle">Llavero incluido</small></div>
-        <span class="marca" aria-hidden="true"></span>
-      </button>
-      <button class="opcion" id="op-mio" type="button" aria-pressed="false">
-        <span class="vacio" id="mio-foto-vacia">+</span>
-        <img id="mio-foto" alt="" hidden>
-        <div><strong>Mi llavero</strong><small id="mio-detalle">Configúralo con fotos de otro llavero</small></div>
-        <span class="marca" aria-hidden="true"></span>
-      </button>
-    </div>
-    <div style="display:grid;gap:10px">
-      <button class="boton" id="escanear" type="button">Escanear</button>
-      <button class="boton secundario chico" id="ir-config" type="button">Configurar mi llavero</button>
-    </div>
-  </div>
-</section>
+<div id="escena"></div>
+<div id="marco-deteccion" hidden></div>
+<div id="guia"><div class="visor"></div></div>
 
-<!-- ================= CONFIGURAR ================= -->
-<section id="config" class="pantalla" hidden>
-  <div class="columna">
-    <div class="cabecera">
-      <button class="redondo" id="volver-config" type="button" aria-label="Volver">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
-      </button>
-      <h2>Configurar mi llavero</h2>
-    </div>
-
-    <div class="paso">
-      <div class="paso-titulo"><b>1</b><h2>Fotos del llavero</h2></div>
-      <ul class="consejos">
-        <li>De frente, con luz pareja y sin flash ni reflejos.</li>
-        <li>Sobre un fondo liso, ocupando casi toda la foto.</li>
-      </ul>
-      <div class="fila">
-        <button class="boton chico" id="tomar-foto" type="button">Tomar foto</button>
-        <button class="boton secundario chico" id="elegir-foto" type="button">Galería</button>
-      </div>
-      <input type="file" id="in-camara" accept="image/*" capture="environment" hidden>
-      <input type="file" id="in-galeria" accept="image/*" hidden>
-      <div class="recorte" id="recorte" hidden>
-        <canvas id="lienzo-recorte" width="600" height="600"></canvas>
-        <label class="zoom" for="zoom">Zoom <input type="range" id="zoom" min="1" max="4" step="0.01" value="1"></label>
-        <span class="ayuda">Arrastra la foto para encuadrar solo el llavero.</span>
-        <div class="fila" style="width:min(100%,300px)">
-          <button class="boton secundario chico" id="cancelar-vista" type="button">Descartar</button>
-          <button class="boton chico" id="agregar-vista" type="button">Usar esta vista</button>
-        </div>
-      </div>
-      <div class="vistas" id="vistas" aria-label="Vistas guardadas"></div>
-      <span class="ayuda" id="vistas-ayuda">Para llaveros en 3D agrega 2 o 3 vistas: desde arriba y un poco inclinado.</span>
-    </div>
-
-    <div class="paso">
-      <div class="paso-titulo"><b>2</b><h2>Música</h2></div>
-      <div class="musica-elegida"><span aria-hidden="true">♪</span><span id="musica-nombre">Canción de ejemplo</span></div>
-      <div class="fila">
-        <button class="boton secundario chico" id="elegir-musica" type="button">Del celular</button>
-        <button class="boton secundario chico" id="musica-ejemplo" type="button">De ejemplo</button>
-      </div>
-      <input type="file" id="in-musica" accept="audio/*" hidden>
-      <input type="url" id="enlace-musica" inputmode="url" autocomplete="off" placeholder="o pega un enlace https://…/cancion.mp3">
-    </div>
-
-    <div class="paso">
-      <div class="paso-titulo"><b>3</b><h2>Generar y guardar</h2></div>
-      <p>La app analiza los detalles de la foto para reconocer el llavero. Tarda de 10 segundos a 1 minuto.</p>
-      <div class="progreso" aria-hidden="true"><i id="barra-progreso"></i></div>
-      <span id="mensaje-config" role="status" aria-live="polite">Primero agrega al menos una vista del llavero.</span>
-      <button class="boton" id="guardar" type="button" disabled>Generar y guardar</button>
-    </div>
-  </div>
-</section>
-
-<!-- ================= ESCÁNER ================= -->
-<section id="ar" hidden>
-  <div id="escena"></div>
-  <div id="guia"><div class="visor"></div></div>
-  <button class="redondo" id="volver-ar" type="button" aria-label="Volver al inicio">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+<header id="cabecera">
+  <img src="icono.svg" alt="">
+  <strong id="titulo">Llavero AR</strong>
+  <button class="redondo" id="abrir-ajustes" type="button" aria-label="Abrir ajustes" aria-controls="ajustes" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"></path>
+      <circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle>
+    </svg>
   </button>
-  <div id="barra">
-    <div id="estado" role="status" aria-live="polite"><span class="punto"></span><span id="estado-texto">Iniciando la cámara…</span></div>
-    <button class="redondo" id="silenciar" type="button" aria-label="Silenciar música">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M11 5 6 9H2v6h4l5 4V5z"></path>
-        <path id="icono-ondas" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path>
-        <path id="icono-mudo" d="M22 9l-6 6M16 9l6 6" style="display:none"></path>
-      </svg>
+</header>
+
+<div id="barra">
+  <div id="estado" role="status" aria-live="polite"><span class="punto"></span><span id="estado-texto">Abriendo la cámara…</span></div>
+  <button class="redondo" id="silenciar" type="button" aria-label="Silenciar música">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H2v6h4l5 4V5z"></path>
+      <path id="icono-ondas" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path>
+      <path id="icono-mudo" d="M22 9l-6 6M16 9l6 6" style="display:none"></path>
+    </svg>
+  </button>
+</div>
+
+<button id="toque-sonido" type="button" hidden>Toca para activar el sonido</button>
+
+<!-- Calibración de color -->
+<div id="calibrar-capa" hidden><div class="mira"></div></div>
+<div id="calibrar-barra" hidden>
+  <p>Pon el llavero dentro del círculo, de cerca y con buena luz.</p>
+  <div class="fila">
+    <button class="boton secundario" id="calibrar-cancelar" type="button">Cancelar</button>
+    <button class="boton" id="calibrar-capturar" type="button">Calibrar</button>
+  </div>
+</div>
+
+<!-- Panel de ajustes -->
+<div id="velo"></div>
+<aside id="ajustes" aria-label="Ajustes" aria-hidden="true">
+  <div class="ajustes-cabecera">
+    <h2>Ajustes</h2>
+    <button class="redondo" id="cerrar-ajustes" type="button" aria-label="Cerrar ajustes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
     </button>
   </div>
-</section>
+
+  <section class="grupo">
+    <div class="grupo-titulo">Música</div>
+    <label class="fila-ajuste" for="aj-musica">
+      <span>Reproducir música<small>Suena al detectar el llavero</small></span>
+      <span class="interruptor"><input type="checkbox" id="aj-musica" checked><i></i></span>
+    </label>
+    <div class="fila-ajuste columna">
+      <span><label for="aj-volumen">Volumen</label><output id="aj-volumen-val">90%</output></span>
+      <input type="range" id="aj-volumen" min="0" max="100" step="5" value="90">
+    </div>
+  </section>
+
+  <section class="grupo">
+    <div class="grupo-titulo">Animación</div>
+    <div class="fila-ajuste columna">
+      <span><label for="aj-tamano">Tamaño del corazón</label><output id="aj-tamano-val">100%</output></span>
+      <input type="range" id="aj-tamano" min="40" max="200" step="10" value="100">
+    </div>
+    <label class="fila-ajuste" for="aj-notas">
+      <span>Notas musicales</span>
+      <span class="interruptor"><input type="checkbox" id="aj-notas" checked><i></i></span>
+    </label>
+  </section>
+
+  <section class="grupo">
+    <div class="grupo-titulo">Cámara</div>
+    <label class="fila-ajuste" for="aj-linterna">
+      <span>Linterna<small id="aj-linterna-nota">Útil con poca luz</small></span>
+      <span class="interruptor"><input type="checkbox" id="aj-linterna"><i></i></span>
+    </label>
+  </section>
+
+  <section class="grupo">
+    <div class="grupo-titulo">Reconocimiento</div>
+    <label class="fila-ajuste" for="aj-imagen">
+      <span>Por imagen<small>Preciso; necesita ver el llavero parecido a las fotos</small></span>
+      <span class="interruptor"><input type="checkbox" id="aj-imagen" checked><i></i></span>
+    </label>
+    <label class="fila-ajuste" for="aj-color">
+      <span>Por color y forma<small>Funciona desde cualquier ángulo</small></span>
+      <span class="interruptor"><input type="checkbox" id="aj-color" checked><i></i></span>
+    </label>
+    <div class="fila-ajuste columna">
+      <span><label for="aj-sensibilidad">Sensibilidad del color</label><output id="aj-sensibilidad-val">Media</output></span>
+      <input type="range" id="aj-sensibilidad" min="1" max="5" step="1" value="3">
+    </div>
+    <label class="fila-ajuste" for="aj-marco">
+      <span>Ver zona detectada<small>Muestra un recuadro donde se detecta el color</small></span>
+      <span class="interruptor"><input type="checkbox" id="aj-marco"><i></i></span>
+    </label>
+    <div class="fila-ajuste columna">
+      <button class="boton" id="abrir-calibrar" type="button">Calibrar color del llavero</button>
+      <p class="nota" id="nota-calibracion">Usando el color del cocodrilo de las fotos.</p>
+    </div>
+  </section>
+
+  <button class="boton secundario" id="restablecer" type="button">Restablecer ajustes</button>
+</aside>
 
 <div id="aviso" role="alert" hidden></div>
 

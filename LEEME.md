@@ -45,20 +45,22 @@ GitHub compila la APK por ti en unos 5–8 minutos.
 
 ## Cómo usar la app
 
-- **Cocodrilo** (incluido): apunta la cámara al llavero, desde arriba o un poco inclinado,
-  con buena luz. Aparece el corazón y suena la música.
-- **Mi llavero**: para probar otros llaveros sin recompilar.
-  1. Toca **Configurar mi llavero**.
-  2. **Tomar foto** → encuadra solo el llavero con el dedo y el zoom → **Usar esta vista**.
-     Para llaveros en 3D agrega 2 o 3 vistas (arriba, inclinado…).
-  3. Elige la música: del celular, de ejemplo o pegando un enlace `https://…mp3`.
-  4. **Generar y guardar**. Queda guardado en el celular.
+La app abre directo en la cámara. Apunta al **cocodrilo** con buena luz: aparece el corazón
+y suena la música. El botón de ajustes está arriba a la derecha.
+
+**Ajustes disponibles**
+- Música: activar o silenciar y volumen.
+- Tamaño del corazón y notas musicales.
+- Linterna (si tu celular la permite).
+- Reconocimiento **por imagen** (preciso) y **por color y forma** (funciona desde cualquier ángulo).
+- Sensibilidad del color y "Ver zona detectada" para ver qué está detectando.
+- **Calibrar color del llavero**: pon el llavero dentro del círculo y toca *Calibrar*.
+  Úsalo si no lo detecta o si detecta otras cosas verdes.
 
 ## Consejos para que lo reconozca rápido
 - Buena luz, sin reflejos fuertes.
 - Que el llavero ocupe buena parte de la pantalla.
-- Mantén la pose parecida a la de las fotos (el cocodrilo es articulado: si lo doblas mucho cuesta más).
-- Fondo distinto al llavero (en mesa de madera funciona bien).
+- Si hay otros objetos verdes cerca, baja la sensibilidad del color.
 
 ## Cambiar el llavero, la música o el modelo 3D incluidos
 Edita `www/config.js` en GitHub (ábrelo y toca el lápiz ✏️). Al guardar, GitHub compila
@@ -66,7 +68,7 @@ una APK nueva sola en **Releases**.
 
 | Qué | Dónde |
 |---|---|
-| Enlace de la música | `musica:` dentro de `llaveroIncluido` |
+| Enlace de la música | `musica:` dentro de `llavero` |
 | Modelo 3D | sube el `.glb` a `www/llaveros/…` y cambia `modelo:` |
 | Tamaño y altura del modelo | `escalaModelo`, `alturaModelo` |
 | Notas musicales y aro | `notasMusicales: true / false` |

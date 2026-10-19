@@ -29,6 +29,33 @@ if (!manifest.includes("android:screenOrientation")) {
 fs.writeFileSync(MANIFEST, manifest);
 console.log("✔ Permiso de cámara agregado");
 
+// ---------- 1b. Música sin toque previo y pantalla siempre encendida ----------
+const actividad = fs.readdirSync("android/app/src/main/java", { recursive: true })
+  .map((f) => path.join("android/app/src/main/java", f)).find((f) => f.endsWith("MainActivity.java"));
+if (actividad) {
+  const paquete = fs.readFileSync(actividad, "utf8").match(/^package\s+([\w.]+);/m)[1];
+  fs.writeFileSync(actividad, `package ${paquete};
+
+import android.os.Bundle;
+import android.view.WindowManager;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // La pantalla no se apaga mientras escaneas
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // Permite que la música suene al detectar el llavero sin tocar la pantalla
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+        }
+    }
+}
+`);
+  console.log("✔ MainActivity ajustada");
+}
+
 // ---------- 2. Íconos ----------
 // Solo la "M" blanca, sin el cuadro morado (para el ícono adaptable)
 const soloLogo = ICONO.replace(/<rect[^>]*\/>/, "");
